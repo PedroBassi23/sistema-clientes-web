@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Sistema de Clientes{% endblock %}
+
+{% block content %}
+<div class="pb-2 mb-4 border-bottom">
+    <h1 class="h2">Dashboard</h1>
+</div>
+
+<div class="row g-4">
+    <!-- Cards de Estatísticas -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-dashboard text-white bg-primary h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-people-fill card-icon"></i>
+                <h5 class="card-title mt-2">Total de Clientes</h5>
+                <p class="display-4">{{ total_clientes }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-dashboard text-dark bg-warning h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-hourglass-split card-icon"></i>
+                <h5 class="card-title mt-2">A Pagar</h5>
+                <p class="display-4">{{ a_pagar_count }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-dashboard text-white bg-success h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-check-circle-fill card-icon"></i>
+                <h5 class="card-title mt-2">Pago</h5>
+                <p class="display-4">{{ pago_count }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-dashboard text-white bg-info h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-pie-chart-fill card-icon"></i>
+                <h5 class="card-title mt-2">Parcial</h5>
+                <p class="display-4">{{ parcial_count }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Total a Receber -->
+    <div class="col-12 col-md-6 mt-4">
+        <div class="card card-dashboard bg-light h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-cash-coin card-icon text-success"></i>
+                <h5 class="card-title mt-2">Total a Receber</h5>
+                <p class="display-4 text-success">R$ {{ "%.2f"|format(total_a_receber)|replace('.', ',') }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOVO: Card de Vencimentos para Hoje -->
+    <div class="col-12 col-md-6 mt-4">
+        <div class="card h-100">
+            <div class="card-header bg-danger text-white fw-bold">
+                <i class="bi bi-calendar-event-fill"></i> Vencimentos para Hoje
+            </div>
+            <div class="card-body p-0" style="max-height: 250px; overflow-y: auto;">
+                {% if vencimentos_hoje %}
+                <ul class="list-group list-group-flush">
+                    {% for cliente in vencimentos_hoje %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="{{ url_for('editar_cliente', id=cliente.id) }}" class="text-decoration-none fw-bold">{{ cliente.nome }}</a>
+                            <br>
+                            <small class="text-muted">{{ cliente.email }}</small>
+                        </div>
+                        <span class="badge bg-danger rounded-pill">R$ {{ "%.2f"|format(cliente.valor_a_pagar)|replace('.', ',') }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="p-4 text-center text-muted">
+                    <p class="mb-0"><i class="bi bi-check2-circle fs-3"></i></p>
+                    Nenhum vencimento para hoje.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
