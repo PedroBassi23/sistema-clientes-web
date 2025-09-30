@@ -89,7 +89,7 @@ def nl2br(value):
         return ''
     return Markup(str(value).replace('\n', '<br>\n'))
 
-app.jin_env.filters['nl2br'] = nl2br
+app.jinja_env.filters['nl2br'] = nl2br
 
 @app.context_processor
 def inject_today():
