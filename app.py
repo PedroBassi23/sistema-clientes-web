@@ -11,6 +11,18 @@ from sqlalchemy.exc import OperationalError
 import io
 from markupsafe import Markup
 
+# --- CRIAR TABELAS E USUÁRIO PADRÃO NO INÍCIO ---
+with app.app_context():
+    # Cria todas as tabelas se não existirem
+    db.create_all()
+
+    # Cria usuário 'teste' se não existir
+    if not User.query.filter_by(username='teste').first():
+        new_user = User(username='teste')
+        new_user.set_password('teste1')
+        db.session.add(new_user)
+        db.session.commit()
+        print("Usuário 'teste' criado automaticamente!")
 # --- CONFIGURAÇÃO DA APLICAÇÃO ---
 app = Flask(__name__)
 
@@ -241,4 +253,5 @@ def exportar_clientes():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
