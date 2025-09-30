@@ -8,7 +8,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from sqlalchemy import or_
 import io
-from jinja2 import Markup
+from markupsafe import Markup
 
 # --- CONFIGURAÇÃO DA APLICAÇÃO ---
 app = Flask(__name__)
@@ -231,3 +231,4 @@ def exportar_clientes():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
