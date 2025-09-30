@@ -6,12 +6,14 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from sqlalchemy import or_
+from sqlalchemy import or_, inspect
+from sqlalchemy.exc import OperationalError
 import io
 from markupsafe import Markup
 
 # --- CONFIGURAÇÃO DA APLICAÇÃO ---
 app = Flask(__name__)
+
 # Configura a Secret Key e o URI do Banco de Dados a partir de variáveis de ambiente
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'uma-chave-secreta-padrao-para-desenvolvimento')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///clientes.db')
@@ -45,6 +47,32 @@ class Cliente(db.Model):
     anotacoes = db.Column(db.Text, nullable=True)
     data_vencimento = db.Column(db.Date, nullable=True)
 
+# --- FUNÇÕES DE INICIALIZAÇÃO AUTOMÁTICA ---
+try:
+    with app.app_context():
+        inspector = inspect(db.engine)
+        if not inspector.has_table("user"):
+            print("Banco de dados não encontrado, criando tabelas...")
+            db.create_all()
+            print("Tabelas criadas com sucesso.")
+            
+            user_teste = User.query.filter_by(username='teste').first()
+            if not user_teste:
+                new_user = User(username='teste')
+                new_user.set_password('teste1')
+                db.session.add(new_user)
+                db.session.commit()
+                print("Usuário 'teste' criado com sucesso.")
+        else:
+            print("Tabelas do banco de dados já existem.")
+except OperationalError as e:
+    print("!!!!!!!!!! ERRO DE CONEXÃO COM O BANCO DE DADOS !!!!!!!!!!")
+    print("Verifique se a DATABASE_URL está correta e se as regras de rede no Supabase permitem a conexão.")
+    print(f"Erro específico: {e}")
+except Exception as e:
+    print(f"Ocorreu um erro inesperado durante a inicialização: {e}")
+
+
 # --- FUNÇÕES AUXILIARES E FILTROS JINJA ---
 @login_manager.user_loader
 def load_user(user_id):
@@ -61,26 +89,6 @@ app.jinja_env.filters['nl2br'] = nl2br
 def inject_today():
     return {'hoje': date.today()}
 
-# --- COMANDOS DE CLI (Para o terminal) ---
-@app.cli.command("init-db")
-def init_db_command():
-    """Cria todas as tabelas do banco de dados."""
-    db.create_all()
-    print("Banco de dados inicializado e tabelas criadas com sucesso!")
-
-@app.cli.command("create-user")
-def create_user_command():
-    """Cria o usuário de teste."""
-    user = User.query.filter_by(username='teste').first()
-    if not user:
-        new_user = User(username='teste')
-        new_user.set_password('teste1')
-        db.session.add(new_user)
-        db.session.commit()
-        print("Usuário 'teste' criado com sucesso!")
-    else:
-        print("Usuário 'teste' já existe.")
-
 # --- ROTAS DA APLICAÇÃO ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -89,12 +97,17 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
-            login_user(user)
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Login ou senha inválidos.', 'danger')
+        try:
+            user = User.query.filter_by(username=username).first()
+            if user and user.check_password(password):
+                login_user(user)
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Login ou senha inválidos.', 'danger')
+        except OperationalError:
+            flash('Erro de comunicação com o banco de dados. O servidor não está conseguindo se conectar.', 'danger')
+            return redirect(url_for('login'))
+            
     return render_template('login.html')
 
 @app.route('/logout')
@@ -157,7 +170,6 @@ def listar_clientes():
 @login_required
 def novo_cliente():
     if request.method == 'POST':
-        # ... (código para adicionar cliente)
         nome = request.form['nome']
         email = request.form['email']
         telefone = request.form['telefone']
@@ -182,7 +194,6 @@ def novo_cliente():
 def editar_cliente(id):
     cliente = Cliente.query.get_or_404(id)
     if request.method == 'POST':
-        # ... (código para editar cliente)
         cliente.nome = request.form['nome']
         cliente.email = request.form['email']
         cliente.telefone = request.form['telefone']
@@ -230,3 +241,4 @@ def exportar_clientes():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
