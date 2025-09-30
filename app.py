@@ -231,38 +231,3 @@ def exportar_clientes():
 
 if __name__ == '__main__':
     app.run(debug=True)
-```
-
-### O que Fazer Agora (Passo a Passo para a Solução)
-
-Siga estes passos na ordem exata:
-
-1.  **Atualize seu `app.py` Local:**
-    * Abra o arquivo `app.py` no seu computador.
-    * Apague todo o conteúdo e cole o código que acabei de gerar.
-    * A principal mudança é que removemos a criação automática do banco de dados e adicionamos o comando `flask init-db`.
-
-2.  **Envie a Correção para o GitHub:**
-    * Volte para a página do seu repositório no GitHub.
-    * Clique em "Add file" > "Upload files".
-    * Arraste o seu `app.py` atualizado para a área de upload, substituindo o antigo.
-    * Clique em **"Commit changes"**.
-
-3.  **Aguarde o Novo Deploy no Render:**
-    * O Render detectará a mudança e iniciará um novo deploy automaticamente.
-    * Acompanhe o progresso na aba "Logs" até ver a mensagem **"Your service is live"**.
-
-4.  **Execute os Comandos de Inicialização no Shell do Render:**
-    * Vá para a aba **"Shell"** no painel do Render.
-    * Espere a conexão (`connected`).
-    * Execute o **PRIMEIRO** comando para criar as tabelas:
-        ```bash
-        python -m flask init-db
-        ```
-        Você verá a mensagem: `Banco de dados inicializado e tabelas criadas com sucesso!`
-
-    * Agora, execute o **SEGUNDO** comando para criar o usuário:
-        ```bash
-        python -m flask create-user
-        
-
