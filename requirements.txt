@@ -6,3 +6,4 @@ gunicorn
 Flask-Login
 Werkzeug
 psycopg2-binary
+markupsafe>=2.0
