@@ -46,6 +46,26 @@ class Cliente(db.Model):
     anotacoes = db.Column(db.Text, nullable=True)
     data_vencimento = db.Column(db.Date, nullable=True)
 
+# --- FUNÇÕES DE INICIALIZAÇÃO AUTOMÁTICA ---
+with app.app_context():
+    # Usamos 'inspect' para verificar se as tabelas já existem.
+    inspector = inspect(db.engine)
+    if not inspector.has_table("user"):
+        print("Banco de dados não encontrado, criando tabelas...")
+        db.create_all()
+        print("Tabelas criadas com sucesso.")
+        
+        # Cria o usuário de teste
+        user_teste = User.query.filter_by(username='teste').first()
+        if not user_teste:
+            new_user = User(username='teste')
+            new_user.set_password('teste1')
+            db.session.add(new_user)
+            db.session.commit()
+            print("Usuário 'teste' criado com sucesso.")
+    else:
+        print("Tabelas do banco de dados já existem.")
+
 # --- FUNÇÕES AUXILIARES E FILTROS JINJA ---
 @login_manager.user_loader
 def load_user(user_id):
@@ -62,27 +82,7 @@ app.jinja_env.filters['nl2br'] = nl2br
 def inject_today():
     return {'hoje': date.today()}
 
-# --- COMANDOS DE CLI (Para o terminal) ---
-@app.cli.command("init-db")
-def init_db_command():
-    """Cria todas as tabelas do banco de dados."""
-    db.create_all()
-    print("Banco de dados inicializado e tabelas criadas com sucesso!")
-
-@app.cli.command("create-user")
-def create_user_command():
-    """Cria o usuário de teste."""
-    user = User.query.filter_by(username='teste').first()
-    if not user:
-        new_user = User(username='teste')
-        new_user.set_password('teste1')
-        db.session.add(new_user)
-        db.session.commit()
-        print("Usuário 'teste' criado com sucesso!")
-    else:
-        print("Usuário 'teste' já existe.")
-
-# --- ROTAS DA APLICAÇÃO ---
+# --- ROTAS DA APLICAÇÃO (O restante do código permanece o mesmo) ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -158,7 +158,6 @@ def listar_clientes():
 @login_required
 def novo_cliente():
     if request.method == 'POST':
-        # ... (código para adicionar cliente)
         nome = request.form['nome']
         email = request.form['email']
         telefone = request.form['telefone']
@@ -183,7 +182,6 @@ def novo_cliente():
 def editar_cliente(id):
     cliente = Cliente.query.get_or_404(id)
     if request.method == 'POST':
-        # ... (código para editar cliente)
         cliente.nome = request.form['nome']
         cliente.email = request.form['email']
         cliente.telefone = request.form['telefone']
@@ -231,4 +229,3 @@ def exportar_clientes():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
