@@ -11,33 +11,22 @@ from sqlalchemy.exc import OperationalError
 import io
 from markupsafe import Markup
 
-# --- CRIAR TABELAS E USUÁRIO PADRÃO NO INÍCIO ---
-with app.app_context():
-    # Cria todas as tabelas se não existirem
-    db.create_all()
-
-    # Cria usuário 'teste' se não existir
-    if not User.query.filter_by(username='teste').first():
-        new_user = User(username='teste')
-        new_user.set_password('teste1')
-        db.session.add(new_user)
-        db.session.commit()
-        print("Usuário 'teste' criado automaticamente!")
-# --- CONFIGURAÇÃO DA APLICAÇÃO ---
+# --- 1. CONFIGURAÇÃO INICIAL DA APLICAÇÃO ---
+# É crucial que 'app' seja criado primeiro.
 app = Flask(__name__)
 
-# Configura a Secret Key e o URI do Banco de Dados a partir de variáveis de ambiente
+# Configura as chaves a partir de variáveis de ambiente para segurança.
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'uma-chave-secreta-padrao-para-desenvolvimento')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///clientes.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# --- 2. INICIALIZAÇÃO DAS EXTENSÕES ---
+# Inicializa as extensões, mas ainda sem configurar tudo.
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'
-login_manager.login_message = "Por favor, faça login para acessar esta página."
-login_manager.login_message_category = "info"
 
-# --- MODELOS DO BANCO DE DADOS ---
+# --- 3. DEFINIÇÃO DOS MODELOS DO BANCO DE DADOS ---
+# As classes que representam as tabelas precisam ser definidas aqui.
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
@@ -59,7 +48,8 @@ class Cliente(db.Model):
     anotacoes = db.Column(db.Text, nullable=True)
     data_vencimento = db.Column(db.Date, nullable=True)
 
-# --- FUNÇÕES DE INICIALIZAÇÃO AUTOMÁTICA ---
+# --- 4. FUNÇÃO DE INICIALIZAÇÃO AUTOMÁTICA ---
+# Este bloco SÓ PODE ser executado depois que 'app', 'db' e os Modelos foram definidos.
 try:
     with app.app_context():
         inspector = inspect(db.engine)
@@ -85,7 +75,11 @@ except Exception as e:
     print(f"Ocorreu um erro inesperado durante a inicialização: {e}")
 
 
-# --- FUNÇÕES AUXILIARES E FILTROS JINJA ---
+# --- 5. CONFIGURAÇÃO FINAL E FUNÇÕES AUXILIARES ---
+login_manager.login_view = 'login'
+login_manager.login_message = "Por favor, faça login para acessar esta página."
+login_manager.login_message_category = "info"
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -95,13 +89,13 @@ def nl2br(value):
         return ''
     return Markup(str(value).replace('\n', '<br>\n'))
 
-app.jinja_env.filters['nl2br'] = nl2br
+app.jin_env.filters['nl2br'] = nl2br
 
 @app.context_processor
 def inject_today():
     return {'hoje': date.today()}
 
-# --- ROTAS DA APLICAÇÃO ---
+# --- 6. ROTAS DA APLICAÇÃO ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -253,5 +247,4 @@ def exportar_clientes():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
 
